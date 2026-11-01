@@ -1,0 +1,65 @@
+[
+  {
+    "chunk_id": 1,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 11\n\n6. Global Seed and Mesh a Whole Part\nCategory: Mesh\nDescription\nApplies a uniform global seed size to an entire part and generates the mesh. Use this when meshing applies\nuniformly across the whole part, with no region-specific refinement.\nPrerequisites / Assumptions\nThe part PART_NAME must already exist in the CURRENT session with native CAD geometry (from a STEP\nimport, in the SAME script) -- NOT reconstructed from a plain .inp file. A typical .inp is already a mesh-based\nsolver format and generally has no native geometry for Abaqus's meshing tools to operate on; this script is for the\ngeometry-import stage, before any .inp has been written for this model.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry (matching whatever the geometry-import step used)\n\nPART_NAME (str): Name of the part to mesh\n\nGLOBAL_SEED_SIZE (float): Approximate global element size, in consistent units\nKey API Objects / Methods Used\npart.seedPart(), part.generateMesh()\nScript\nfrom abaqus import mdb\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nGLOBAL_SEED_SIZE = 5.0\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \npart.seedPart(size=GLOBAL_SEED_SIZE, deviationFactor=0.1, minSizeFactor=0.1)\npart.generateMesh()\n \nnum_elements = len(part.elements)\nprint(\"Meshed part '{}' with global seed size {} -- {} elements generated\".format(\n    PART_NAME, GLOBAL_SEED_SIZE, num_elements\n))\nNotes / Caveats\nPERSISTENCE: meshing is typically the natural checkpoint at the end of the geometry-import stage -- once\nmeshed, add a final job.writeInput() (see the Write an Updated Input File script) to persist the meshed model to\n.inp, so later, separately-dispatched scripts (materials, loads, etc.) can open it from there. If generateMesh()\ncompletes without error but len(part.elements) is 0, the geometry likely has an unmeshable topology -- surface\nthis as a genuine failure, not a silent success.\n7. Region-Specific Local Seed and Mesh Refinement\nCategory: Mesh",
+    "metadata": {
+      "page_label": "11",
+      "author": "(anonymous)",
+      "creator": "(unspecified)",
+      "page": 10,
+      "total_pages": 44,
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "keywords": "",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "subject": "(unspecified)",
+      "trapped": "/False",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "relevance_score": 0.68710536
+    },
+    "retrieval_method": "hybrid"
+  },
+  {
+    "chunk_id": 2,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 12\n\nDescription\nApplies a finer local seed to a specific named edge set, in addition to a coarser global seed, then meshes the\npart. Use this for tasks like \"refine the mesh near the fillet\".\nPrerequisites / Assumptions\nSame as the global-mesh script: the part must exist in the CURRENT session with native geometry, not\nreconstructed from a plain .inp. EDGE_SET_NAME must already exist as a defined set of edges on the part.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry\n\nPART_NAME (str): Name of the part to mesh\n\nEDGE_SET_NAME (str): The exact, pre-existing edge set name for local refinement\n\nLOCAL_SEED_SIZE (float): Local element size at the refined region\n\nGLOBAL_SEED_SIZE (float): Global element size elsewhere on the part\nKey API Objects / Methods Used\npart.seedPart(), part.seedEdgeBySize(), part.generateMesh()\nScript\nfrom abaqus import mdb\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nEDGE_SET_NAME = \"Fillet-Edges\"\nLOCAL_SEED_SIZE = 1.0\nGLOBAL_SEED_SIZE = 5.0\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \n# This script assumes EDGE_SET_NAME already exists as a defined set of edges\n# on the part. It does not invent or guess this name -- confirm it exists\n# before running this script.\nif EDGE_SET_NAME not in part.sets.keys():\n    raise ValueError(\"Set '{}' does not exist on part '{}'.\".format(EDGE_SET_NAME, PART_NAM\nE))\n \npart.seedPart(size=GLOBAL_SEED_SIZE, deviationFactor=0.1, minSizeFactor=0.1)\n \ntarget_edges = part.sets[EDGE_SET_NAME].edges\npart.seedEdgeBySize(edges=target_edges, size=LOCAL_SEED_SIZE, deviationFactor=0.1, constrai\nnt=C.FINER)\n \npart.generateMesh()\n \nnum_elements = len(part.elements)\nprint(\"Meshed part '{}' with local refinement on '{}' -- {} elements generated\".format(\n    PART_NAME, EDGE_SET_NAME, num_elements\n))",
+    "metadata": {
+      "page": 11,
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "title": "Abaqus 2024 Scripting Reference",
+      "page_label": "12",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "creator": "(unspecified)",
+      "keywords": "",
+      "author": "(anonymous)",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "subject": "(unspecified)",
+      "trapped": "/False",
+      "relevance_score": 0.42310047
+    },
+    "retrieval_method": "hybrid"
+  },
+  {
+    "chunk_id": 3,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 10\n\n5. Create a Part Instance\nCategory: Assembly\nDescription\nCreates an instance of a part in the root assembly, as either dependent (mesh comes from the part) or\nindependent (instance has its own mesh).\nPrerequisites / Assumptions\nThe part PART_NAME must already exist in the CURRENT session (typically just created via the STEP import\nscript, in the SAME script) -- an .inp file already contains its own assembly/instance definitions, so this script is\nnot meant to resume from an existing .inp.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry (matching whatever the geometry-import step used)\n\nPART_NAME (str): Name of the part to instance\n\nINSTANCE_NAME (str): Name for the new instance\n\nDEPENDENT (bool): True for a dependent instance, False for independent\nKey API Objects / Methods Used\nassembly.Instance()\nScript\nfrom abaqus import mdb\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nINSTANCE_NAME = \"Part-1-1\"\nDEPENDENT = True\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\npart = model.parts[PART_NAME]\n \ndependent_flag = C.ON if DEPENDENT else C.OFF\nassembly.Instance(name=INSTANCE_NAME, part=part, dependent=dependent_flag)\n \nprint(\"Created instance '{}' of part '{}' ({})\".format(\n    INSTANCE_NAME, PART_NAME, \"dependent\" if DEPENDENT else \"independent\"\n))\nNotes / Caveats\nPERSISTENCE: same as the STEP import script -- if this is the last operation in its dispatch, add a final\njob.writeInput() (see the Write an Updated Input File script) before this process ends. If meshing continues in the\nsame script, write out only once, at the true end.",
+    "metadata": {
+      "page": 9,
+      "total_pages": 44,
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "page_label": "10",
+      "keywords": "",
+      "title": "Abaqus 2024 Scripting Reference",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "creator": "(unspecified)",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "subject": "(unspecified)",
+      "relevance_score": 0.010368157
+    },
+    "retrieval_method": "hybrid"
+  }
+]

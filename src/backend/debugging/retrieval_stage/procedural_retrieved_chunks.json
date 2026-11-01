@@ -1,0 +1,65 @@
+[
+  {
+    "chunk_id": 1,
+    "page_content": "Source: abaqus_copilot_procedural_workflow_guide.pdf\nPage: 2\n\nTHE GOLDEN RULE: Named Regions for Any Targeted Operation\nContext: this rule applies whenever a task targets a SPECIFIC sub-region of the model -- a face,\nsurface, edge, node set, or element set -- rather than an entire part or the whole model. This is the single\nmost important procedural rule in this document. Apply it BEFORE dispatching Coding Agent for any such\ntask.\nWhat counts as a \"targeted operation\"\nAny operation that applies to a specific sub-region rather than a whole part, including but not limited to:\n\nApplying a load (pressure, concentrated force, moment, distributed load, etc.) to a face, surface, or\nnode set\n\nApplying a boundary condition (encastre, displacement, symmetry, velocity, etc.) to a face, edge, or\nnode set\n\nDefining a connection, tie constraint, coupling constraint, or contact interaction between specific\nsurfaces\n\nAssigning a material or section to a specific region (rather than an entire part)\n\nApplying mesh seeds or mesh controls to a specific sub-region (rather than the whole part with\ndefault settings)\n\nExtracting or reporting a result (stress, displacement, reaction force) for a specific named\nnode/element set, when that specific set is not already a standard, whole-part quantity\nThe decision procedure\nStep 1 -- Identify exactly what region the user means\nRead the user's description carefully. Users describe regions informally (\"the top surface\", \"where the\nbracket bolts on\", \"the left edge\") -- your job is to map this informal description to whether a matching\nNAMED set or surface already exists in the model, not to guess a geometric selection yourself.\nStep 2 -- Check whether a matching named set/surface already exists\nUse read_parsed_file_info on the relevant .inp file's derived summary yourself first -- this is a direct, cheap\ncheck you (FEA Planner) can do without dispatching anyone. The inp_summary lists defined sets,\nsurfaces, and regions by name. Look for a set/surface name that plausibly corresponds to what the user\ndescribed.\nIf the mapping is genuinely ambiguous or requires engineering interpretation to confirm (e.g., multiple\ncandidate sets could plausibly be \"the top surface\", or you need to visually confirm which named region\ncorresponds to the physical location described) -- dispatch Subject Matter Expert to interpret the model (it\nhas the same read_parsed_file_info access plus the two screenshot tools, and can visually confirm which\nnamed region matches the described location) and report back which specific named set/surface, if any,\nmatches.\nStep 3A -- A clear matching named set/surface exists: proceed\nDispatch Coding Agent with dispatch_instructions that state the EXACT, VERBATIM set/surface name as\nit appears in the .inp file -- copy it exactly, character for character, from what read_parsed_file_info or SME\nreturned. Never paraphrase, re-type from memory, or guess at capitalization/spacing. A subtle mismatch",
+    "metadata": {
+      "source": "abaqus_copilot_procedural_workflow_guide.pdf",
+      "page_label": "2",
+      "creator": "(unspecified)",
+      "moddate": "2026-08-25T17:04:11+00:00",
+      "trapped": "/False",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "subject": "(unspecified)",
+      "page": 1,
+      "keywords": "",
+      "title": "Abaqus CAE AI Copilot - Procedural Workflow Guide",
+      "creationdate": "2026-08-25T17:04:11+00:00",
+      "author": "(anonymous)",
+      "total_pages": 12,
+      "relevance_score": 0.22388572
+    },
+    "retrieval_method": "hybrid"
+  },
+  {
+    "chunk_id": 2,
+    "page_content": "Source: abaqus_copilot_procedural_workflow_guide.pdf\nPage: 5\n\nWORKFLOW 2: Applying Loads, Boundary Conditions,\nConnections, and Interactions\nTask pattern: the user wants a load, boundary condition, tie/coupling constraint, or contact interaction\napplied to some part of the model. Examples: \"apply a 500N downward force to the top of my bracket\", \"fix\nthe base of the column\", \"tie these two parts together\", \"add a frictional contact between the pin and the\nhole\".\nStep 1 -- Apply THE GOLDEN RULE first\nBefore anything else, resolve the exact named region this operation targets, per THE GOLDEN RULE\nsection above. Do not proceed to dispatch Coding Agent until the exact set/surface name is confirmed to\nexist.\nStep 2 -- Confirm every other required value is established\nBeyond the region, check whether the task fully specifies: the load/BC TYPE and MAGNITUDE/VALUE,\nthe DIRECTION (if directional), and the analysis STEP it applies in. If any of these is missing and has no\nsensible default (e.g. the user said \"apply a load\" but never gave a magnitude or direction) -- this is a\ncode-level/parameter input, per THE CODE-LEVEL INPUT RULE: collect it via Interface Agent (a\nnumber_input for magnitude, a selectbox for direction/step if there are a small number of valid choices),\nnever via ask_user and never invented by Coding Agent.\nStep 3 -- Decide whether to consult Consultant first\nFor a routine, well-understood operation (a simple pressure or concentrated force, a standard encastre or\npinned/roller BC, a straightforward tie constraint between two clearly-matching surfaces), you may be\nconfident enough to dispatch Coding Agent directly. For anything involving genuine engineering judgment\n-- contact interactions (friction coefficients, normal/tangential behavior choices), coupling constraints\n(kinematic vs. distributed), or any case where the physical setup could be represented multiple defensible\nways -- consult Consultant first for the methodology, per the DYNAMIC DISPATCH\ndefault-toward-Consultant guidance.\nStep 4 -- Dispatch Coding Agent\ndispatch_instructions must be fully self-contained (Coding Agent has zero memory of anything outside this\none dispatch): the exact verbatim region name(s), the operation type, magnitude/value and direction,\nwhich analysis step it applies in, WORKING_DIRECTORY restated, and any Consultant advice already\ncollected, translated into plain instructions (never referencing Consultant by name).\nStep 5 -- Verify the result once Coding Agent reports success\nCoding Agent's final_success_message already names every file produced. For load/BC/connection tasks,\nit's often worth a quick visual confirmation -- dispatch SME (or use your own screenshot tool directly) to\ncapture a screenshot with loads/BCs visible, confirming the operation was applied where intended,\nespecially before finalizing a task where getting this wrong would be a meaningful engineering error.",
+    "metadata": {
+      "author": "(anonymous)",
+      "trapped": "/False",
+      "subject": "(unspecified)",
+      "creationdate": "2026-08-25T17:04:11+00:00",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "page_label": "5",
+      "total_pages": 12,
+      "page": 4,
+      "moddate": "2026-08-25T17:04:11+00:00",
+      "keywords": "",
+      "source": "abaqus_copilot_procedural_workflow_guide.pdf",
+      "creator": "(unspecified)",
+      "title": "Abaqus CAE AI Copilot - Procedural Workflow Guide",
+      "relevance_score": 0.20963143
+    },
+    "retrieval_method": "hybrid"
+  },
+  {
+    "chunk_id": 3,
+    "page_content": "Source: abaqus_copilot_procedural_workflow_guide.pdf\nPage: 3\n\n(case, underscore vs. space, a trailing number) will cause Coding Agent's script to fail at runtime with a\nKeyError or equivalent -- and that failure is much harder for Coding Agent to self-diagnose than it is for you\nto get the name exactly right at dispatch time.\nEXAMPLE dispatch_instructions excerpt:\n\"Apply a concentrated force of 500 N in the -Y direction to the node set named\n'RP-1' (exact name, verbatim from the .inp file's defined sets) in Step-1. Do\nnot apply this to any other set or attempt to geometrically re-derive this\nregion -- 'RP-1' is the confirmed, correct target.\"\nStep 3B -- No matching named set/surface exists: do NOT dispatch Coding Agent to\nguess\nThis is a hard rule, not a judgment call: if no named set or surface in the model corresponds to what the\nuser described, Coding Agent must NOT be dispatched to select the region programmatically (e.g. via\nfindAt(), bounding-box coordinate logic, or any other improvised geometric selection). Silently applying a\nload or BC to a programmatically-guessed region is a serious, hard-to-catch class of error -- the script may\nrun successfully and produce a plausible-looking result while acting on entirely the wrong part of the\nmodel.\nInstead: route_to_file_uploader, with a message_to_user that plainly and specifically explains what's\nneeded -- name the kind of region required (a node set, element set, or surface, depending on the\noperation -- see WORKFLOW 2/3/4 below for which type each operation typically needs) and ask the user\nto define that set/surface in Abaqus CAE (or their pre-processor of choice) under a clear name, then\nre-upload the updated .inp file.\nEXAMPLE message_to_user:\n\"To apply this load correctly, I need the specific surface it should act on to\nbe defined as a named surface in your model. Could you create a surface (in\nAbaqus CAE: Assembly module > Tools > Surface > Create) covering the top face\nof the bracket, give it a clear name, and re-upload the updated .inp file?\"\nStep 4 -- After re-upload, re-verify before proceeding\nThe automatic File Relevance Checker pass runs unconditionally after any upload, but it verifies file\nTYPE/relevance -- it does not check for a specific named set inside the file. On your next turn, re-run Step\n2 yourself against the newly uploaded file's summary. If the needed set now exists, proceed per Step 3A. If\nit still doesn't exist or the name is unclear, you may request it once more, but treat this as a SOFT LIMIT: if\nthis happens a second time on the same request, stop looping and use ask_user instead of another silent\nre-upload request -- state plainly and specifically what's still missing or ambiguous, since at that point the\nissue is more likely a genuine misunderstanding than a simple oversight.\nNote: There is no automated loop-counter protecting this specific scenario the way\nFILE_RESOLUTION_LOOP_COUNT protects the earlier file-identification phase -- this re-verification\nhappens during planning_and_dispatch, after files were already initially resolved. Use your own judgment to\navoid looping indefinitely.",
+    "metadata": {
+      "moddate": "2026-08-25T17:04:11+00:00",
+      "creator": "(unspecified)",
+      "page": 2,
+      "keywords": "",
+      "source": "abaqus_copilot_procedural_workflow_guide.pdf",
+      "subject": "(unspecified)",
+      "author": "(anonymous)",
+      "title": "Abaqus CAE AI Copilot - Procedural Workflow Guide",
+      "trapped": "/False",
+      "total_pages": 12,
+      "creationdate": "2026-08-25T17:04:11+00:00",
+      "page_label": "3",
+      "producer": "ReportLab PDF Library - (opensource)",
+      "relevance_score": 0.0001535624
+    },
+    "retrieval_method": "hybrid"
+  }
+]

@@ -1,0 +1,838 @@
+[
+  {
+    "chunk_id": 1,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 1\n\nAbaqus 2024 Scripting Reference\nHigh-Quality Sample Scripts by Category\nThis document contains 26 self-contained Abaqus 2024 Python scripting patterns, retrieved by Consultant and\nCoding Agent as example patterns for common scripting operations -- NOT an exhaustive API reference, and not\na substitute for official Abaqus/SIMULIA documentation.\nOn correctness: every script below has been validated for Python SYNTAX correctness (parsed without error).\nThey have NOT been executed against a live Abaqus installation, and API-level correctness (correct method\nnames, correct argument names/types for the current Abaqus 2024 release) reflects careful, well-established\nknowledge of the Abaqus scripting API rather than live verification. Spot-check a sample against a real Abaqus\ninstall before treating this set as fully verified.\nOn named regions: many scripts below operate on a named set, surface, or region (e.g. SET_NAME,\nSURFACE_NAME). Every such script explicitly checks that the named region already exists before proceeding,\nand raises a clear error if it does not. NEVER remove this check, and NEVER replace a missing named region\nwith a programmatically guessed geometric selection (coordinate-based, bounding-box, or otherwise) -- if the\nrequired region does not exist in the model, that is a genuine gap that needs to be resolved upstream (the region\nmust be defined in the model itself), not something a script should work around silently.\nTemplate used for every script below: Title & Category, Description, Prerequisites/Assumptions, Inputs\nRequired, Key API Objects/Methods, the Script itself, and Notes/Caveats.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 0,
+      "page_label": "1"
+    }
+  },
+  {
+    "chunk_id": 2,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 2\n\nContents\nPart / Geometry\n    Import STEP Geometry and Create a Part\nMaterials & Sections\n    Isotropic Elastic Material and Whole-Part Solid Section\n    Region-Specific Material and Section Assignment\n    Shell Section with Thickness\nAssembly\n    Create a Part Instance\nMesh\n    Global Seed and Mesh a Whole Part\n    Region-Specific Local Seed and Mesh Refinement\nSteps\n    Static General Step\n    Nonlinear Static Step with Increment Control\nBoundary Conditions\n    Encastre Boundary Condition\n    Displacement / Rotation Boundary Condition\n    Symmetry Boundary Condition\nLoads\n    Concentrated Force on a Node Set\n    Pressure Load on a Surface\n    Distributed Line Load on Beam Elements\n    Gravity / Body Force Load\nInteractions & Connections\n    Tie Constraint Between Two Surfaces\n    Surface-to-Surface Contact with Friction\n    Kinematic Coupling Constraint\nJob Submission\n    Submit a Job Directly from an Input File\nPost-Processing\n    Peak von Mises Stress Extraction\n    Reaction Force Extraction at a Node Set\n    Nodal Displacement Time-History\n    Write Extracted Stress Results to CSV\nFile Utility\n    List All Defined Sets and Surfaces in an Existing Model\n    Write an Updated Input File (.inp) from the Current In-Memory Model",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 1,
+      "page_label": "2"
+    }
+  },
+  {
+    "chunk_id": 3,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 3\n\n1. Import STEP Geometry and Create a Part\nCategory: Part / Geometry\nDescription\nImports raw CAD geometry from a .step/.stp file and creates a corresponding Abaqus part. This is the starting\npoint for any task that begins from uploaded CAD geometry.\nPrerequisites / Assumptions\nA valid .step or .stp file must exist at STEP_FILE_PATH.\nInputs Required\n\nMODEL_NAME (str): Name for the model database entry, e.g. \"Model-1\"\n\nSTEP_FILE_PATH (str): Absolute path to the .step/.stp file\n\nPART_NAME (str): Name to assign to the imported part\nKey API Objects / Methods Used\nmdb.openStep(), model.PartFromGeometryFile()\nScript\nfrom abaqus import mdb\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nSTEP_FILE_PATH = \"/path/to/geometry.stp\"\nPART_NAME = \"ImportedPart\"\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\n \nstep_import = mdb.openStep(STEP_FILE_PATH, scaleFromFile=C.OFF)\nmodel.PartFromGeometryFile(\n    name=PART_NAME,\n    geometryFile=step_import,\n    combine=False,\n    dimensionality=C.THREE_D,\n    type=C.DEFORMABLE_BODY,\n)\n \nprint(\"Imported STEP geometry from '{}' and created part '{}'\".format(STEP_FILE_PATH, PART_\nNAME))\nNotes / Caveats\nPERSISTENCE: this script assumes MODEL_NAME's default fresh model (auto-created when a new mdb\nsession starts) -- there is nothing to open from an existing .inp yet at this stage. If this is the ONLY operation in\nthis script's dispatch, add a final job.writeInput() call (see the Write an Updated Input File script) to persist the\nimported part before this process ends -- otherwise, if instancing/meshing continue in the SAME script (the typical\ncase), only write out the .inp ONCE, at the true end of the combined script, not after every individual sub-step.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 2,
+      "page_label": "3"
+    }
+  },
+  {
+    "chunk_id": 4,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 4\n\n2. Isotropic Elastic Material and Whole-Part Solid Section\nCategory: Materials & Sections\nDescription\nOpens an existing model from its .inp file, creates a simple isotropic elastic material and a matching\nhomogeneous solid section, assigns that section to an entire part, and writes the updated model back out to a\nnew .inp. Use this when the whole part is a single material.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file already containing the part PART_NAME with solid (3D)\ngeometry.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nPART_NAME (str): Name of the part to assign the section to (confirm this against the actual model -- see the\nList All Defined Sets utility script if uncertain)\n\nMATERIAL_NAME (str): Name for the new material, e.g. \"Steel\"\n\nYOUNGS_MODULUS (float): Young's modulus, in consistent units (e.g. MPa)\n\nPOISSONS_RATIO (float): Poisson's ratio\n\nSECTION_NAME (str): Name for the new solid section\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), model.Material(), model.HomogeneousSolidSection(), part.Set(),\npart.SectionAssignment(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nPART_NAME = \"Part-1\"\nMATERIAL_NAME = \"Steel\"\nYOUNGS_MODULUS = 200000.0  # MPa\nPOISSONS_RATIO = 0.3\nSECTION_NAME = \"Solid-Section-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 3,
+      "page_label": "4"
+    }
+  },
+  {
+    "chunk_id": 5,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 5\n\n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \nmaterial = model.Material(name=MATERIAL_NAME)\nmaterial.Elastic(table=((YOUNGS_MODULUS, POISSONS_RATIO),))\n \nmodel.HomogeneousSolidSection(name=SECTION_NAME, material=MATERIAL_NAME)\n \nall_cells = part.cells[:]\nregion = part.Set(cells=all_cells, name=\"WholePart-Set\")\npart.SectionAssignment(region=region, sectionName=SECTION_NAME)\n \n# Persist the updated model -- this process's in-memory model does not\n# survive once this script finishes; a later, separately-dispatched script\n# must be able to pick up from here.\nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Assigned material '{}' via section '{}' to entire part '{}'. Wrote updated model to \n'{}.inp'\".format(\n    MATERIAL_NAME, SECTION_NAME, PART_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nIf the part is shell/2D geometry rather than solid, use faces instead of cells when building the Set. The exact\nPART_NAME after ModelFromInputFile depends on how the original .inp was authored -- confirm it via the List\nAll Defined Sets utility script if it's not already known.\n3. Region-Specific Material and Section Assignment\nCategory: Materials & Sections\nDescription\nOpens an existing model, assigns a material and section to only a specific named region of a part (rather than the\nwhole part), and persists the result -- for tasks like \"the hub should be aluminum, the shaft should be steel\" where\nboth are modeled as one part.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set on the\npart. This script does NOT invent, guess, or programmatically derive this set -- it checks for its existence and\nraises an error if not found.\nInputs Required",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 4,
+      "page_label": "5"
+    }
+  },
+  {
+    "chunk_id": 6,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 6\n\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nPART_NAME (str): Name of the part containing the target region\n\nSET_NAME (str): The exact, pre-existing set name for the target region\n\nMATERIAL_NAME (str): Name for the new material\n\nYOUNGS_MODULUS (float): Young's modulus, in consistent units\n\nPOISSONS_RATIO (float): Poisson's ratio\n\nSECTION_NAME (str): Name for the new section\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), part.sets, model.Material(), model.HomogeneousSolidSection(),\npart.SectionAssignment(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nPART_NAME = \"Part-1\"\nSET_NAME = \"Hub-Region\"\nMATERIAL_NAME = \"Aluminum\"\nYOUNGS_MODULUS = 69000.0  # MPa\nPOISSONS_RATIO = 0.33\nSECTION_NAME = \"Hub-Section\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 5,
+      "page_label": "6"
+    }
+  },
+  {
+    "chunk_id": 7,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 7\n\n# This script assumes SET_NAME already exists as a defined set on the part.\n# It does not invent, guess, or programmatically derive this name -- confirm\n# the exact set name exists among the part's defined sets before running this.\nif SET_NAME not in part.sets.keys():\n    raise ValueError(\n        \"Set '{}' does not exist on part '{}'. Confirm the exact set name \"\n        \"before proceeding.\".format(SET_NAME, PART_NAME)\n    )\n \nmaterial = model.Material(name=MATERIAL_NAME)\nmaterial.Elastic(table=((YOUNGS_MODULUS, POISSONS_RATIO),))\n \nmodel.HomogeneousSolidSection(name=SECTION_NAME, material=MATERIAL_NAME)\n \nregion = part.sets[SET_NAME]\npart.SectionAssignment(region=region, sectionName=SECTION_NAME)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Assigned material '{}' via section '{}' to region '{}'. Wrote updated model to '{}.i\nnp'\".format(\n    MATERIAL_NAME, SECTION_NAME, SET_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nIf the target set is actually defined at the assembly level rather than the part level, reference it via\nmodel.rootAssembly.sets instead of part.sets.\n4. Shell Section with Thickness\nCategory: Materials & Sections\nDescription\nOpens an existing model, creates an isotropic elastic material and a homogeneous shell section with a specified\nthickness, assigns it to an entire shell part, and persists the result.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file already containing the part PART_NAME with shell (2D\nsurface) geometry.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nPART_NAME (str): Name of the shell part\n\nMATERIAL_NAME (str): Name for the new material\n\nYOUNGS_MODULUS (float): Young's modulus, in consistent units\n\nPOISSONS_RATIO (float): Poisson's ratio\n\nSECTION_NAME (str): Name for the new shell section\n\nTHICKNESS (float): Shell thickness, in consistent units (e.g. mm)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 6,
+      "page_label": "7"
+    }
+  },
+  {
+    "chunk_id": 8,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 8\n\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), model.Material(), model.HomogeneousShellSection(), part.Set(),\npart.SectionAssignment(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nPART_NAME = \"Part-1\"\nMATERIAL_NAME = \"Steel\"\nYOUNGS_MODULUS = 200000.0\nPOISSONS_RATIO = 0.3\nSECTION_NAME = \"Shell-Section-1\"\nTHICKNESS = 2.0  # mm\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \nmaterial = model.Material(name=MATERIAL_NAME)\nmaterial.Elastic(table=((YOUNGS_MODULUS, POISSONS_RATIO),))\n \nmodel.HomogeneousShellSection(name=SECTION_NAME, material=MATERIAL_NAME, thickness=THICKNES\nS)\n \nall_faces = part.faces[:]\nregion = part.Set(faces=all_faces, name=\"WholePart-Shell-Set\")\npart.SectionAssignment(region=region, sectionName=SECTION_NAME)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 7,
+      "page_label": "8"
+    }
+  },
+  {
+    "chunk_id": 9,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 9\n\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created shell section '{}' (thickness {}) and assigned to part '{}'. Wrote updated m\nodel to '{}.inp'\".format(\n    SECTION_NAME, THICKNESS, PART_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nNone.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 8,
+      "page_label": "9"
+    }
+  },
+  {
+    "chunk_id": 10,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 10\n\n5. Create a Part Instance\nCategory: Assembly\nDescription\nCreates an instance of a part in the root assembly, as either dependent (mesh comes from the part) or\nindependent (instance has its own mesh).\nPrerequisites / Assumptions\nThe part PART_NAME must already exist in the CURRENT session (typically just created via the STEP import\nscript, in the SAME script) -- an .inp file already contains its own assembly/instance definitions, so this script is\nnot meant to resume from an existing .inp.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry (matching whatever the geometry-import step used)\n\nPART_NAME (str): Name of the part to instance\n\nINSTANCE_NAME (str): Name for the new instance\n\nDEPENDENT (bool): True for a dependent instance, False for independent\nKey API Objects / Methods Used\nassembly.Instance()\nScript\nfrom abaqus import mdb\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nINSTANCE_NAME = \"Part-1-1\"\nDEPENDENT = True\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\npart = model.parts[PART_NAME]\n \ndependent_flag = C.ON if DEPENDENT else C.OFF\nassembly.Instance(name=INSTANCE_NAME, part=part, dependent=dependent_flag)\n \nprint(\"Created instance '{}' of part '{}' ({})\".format(\n    INSTANCE_NAME, PART_NAME, \"dependent\" if DEPENDENT else \"independent\"\n))\nNotes / Caveats\nPERSISTENCE: same as the STEP import script -- if this is the last operation in its dispatch, add a final\njob.writeInput() (see the Write an Updated Input File script) before this process ends. If meshing continues in the\nsame script, write out only once, at the true end.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 9,
+      "page_label": "10"
+    }
+  },
+  {
+    "chunk_id": 11,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 11\n\n6. Global Seed and Mesh a Whole Part\nCategory: Mesh\nDescription\nApplies a uniform global seed size to an entire part and generates the mesh. Use this when meshing applies\nuniformly across the whole part, with no region-specific refinement.\nPrerequisites / Assumptions\nThe part PART_NAME must already exist in the CURRENT session with native CAD geometry (from a STEP\nimport, in the SAME script) -- NOT reconstructed from a plain .inp file. A typical .inp is already a mesh-based\nsolver format and generally has no native geometry for Abaqus's meshing tools to operate on; this script is for the\ngeometry-import stage, before any .inp has been written for this model.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry (matching whatever the geometry-import step used)\n\nPART_NAME (str): Name of the part to mesh\n\nGLOBAL_SEED_SIZE (float): Approximate global element size, in consistent units\nKey API Objects / Methods Used\npart.seedPart(), part.generateMesh()\nScript\nfrom abaqus import mdb\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nGLOBAL_SEED_SIZE = 5.0\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \npart.seedPart(size=GLOBAL_SEED_SIZE, deviationFactor=0.1, minSizeFactor=0.1)\npart.generateMesh()\n \nnum_elements = len(part.elements)\nprint(\"Meshed part '{}' with global seed size {} -- {} elements generated\".format(\n    PART_NAME, GLOBAL_SEED_SIZE, num_elements\n))\nNotes / Caveats\nPERSISTENCE: meshing is typically the natural checkpoint at the end of the geometry-import stage -- once\nmeshed, add a final job.writeInput() (see the Write an Updated Input File script) to persist the meshed model to\n.inp, so later, separately-dispatched scripts (materials, loads, etc.) can open it from there. If generateMesh()\ncompletes without error but len(part.elements) is 0, the geometry likely has an unmeshable topology -- surface\nthis as a genuine failure, not a silent success.\n7. Region-Specific Local Seed and Mesh Refinement\nCategory: Mesh",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 10,
+      "page_label": "11"
+    }
+  },
+  {
+    "chunk_id": 12,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 12\n\nDescription\nApplies a finer local seed to a specific named edge set, in addition to a coarser global seed, then meshes the\npart. Use this for tasks like \"refine the mesh near the fillet\".\nPrerequisites / Assumptions\nSame as the global-mesh script: the part must exist in the CURRENT session with native geometry, not\nreconstructed from a plain .inp. EDGE_SET_NAME must already exist as a defined set of edges on the part.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry\n\nPART_NAME (str): Name of the part to mesh\n\nEDGE_SET_NAME (str): The exact, pre-existing edge set name for local refinement\n\nLOCAL_SEED_SIZE (float): Local element size at the refined region\n\nGLOBAL_SEED_SIZE (float): Global element size elsewhere on the part\nKey API Objects / Methods Used\npart.seedPart(), part.seedEdgeBySize(), part.generateMesh()\nScript\nfrom abaqus import mdb\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nPART_NAME = \"Part-1\"\nEDGE_SET_NAME = \"Fillet-Edges\"\nLOCAL_SEED_SIZE = 1.0\nGLOBAL_SEED_SIZE = 5.0\n# ====================\n \nmodel = mdb.models[MODEL_NAME]\npart = model.parts[PART_NAME]\n \n# This script assumes EDGE_SET_NAME already exists as a defined set of edges\n# on the part. It does not invent or guess this name -- confirm it exists\n# before running this script.\nif EDGE_SET_NAME not in part.sets.keys():\n    raise ValueError(\"Set '{}' does not exist on part '{}'.\".format(EDGE_SET_NAME, PART_NAM\nE))\n \npart.seedPart(size=GLOBAL_SEED_SIZE, deviationFactor=0.1, minSizeFactor=0.1)\n \ntarget_edges = part.sets[EDGE_SET_NAME].edges\npart.seedEdgeBySize(edges=target_edges, size=LOCAL_SEED_SIZE, deviationFactor=0.1, constrai\nnt=C.FINER)\n \npart.generateMesh()\n \nnum_elements = len(part.elements)\nprint(\"Meshed part '{}' with local refinement on '{}' -- {} elements generated\".format(\n    PART_NAME, EDGE_SET_NAME, num_elements\n))",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 11,
+      "page_label": "12"
+    }
+  },
+  {
+    "chunk_id": 13,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 13\n\nNotes / Caveats\nPERSISTENCE: same as the global-mesh script -- add a final job.writeInput() once meshing is complete.\nconstraint=C.FINER only allows the local seed to make the mesh finer than the global seed at that edge, not\ncoarser.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 12,
+      "page_label": "13"
+    }
+  },
+  {
+    "chunk_id": 14,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 14\n\n8. Static General Step\nCategory: Steps\nDescription\nOpens an existing model, creates a standard linear static analysis step with specified increment control, and\npersists the result.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. PREVIOUS_STEP must already exist in that model\n(typically \"Initial\", or an earlier named step).\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Name for the new step\n\nPREVIOUS_STEP (str): Name of the step this one follows\n\nINITIAL_INC (float): Initial increment size\n\nMAX_INC (float): Maximum increment size\n\nMIN_INC (float): Minimum increment size\n\nMAX_NUM_INC (int): Maximum number of increments allowed\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), model.StaticStep(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nPREVIOUS_STEP = \"Initial\"\nINITIAL_INC = 0.1\nMAX_INC = 1.0\nMIN_INC = 1e-05\nMAX_NUM_INC = 100\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 13,
+      "page_label": "14"
+    }
+  },
+  {
+    "chunk_id": 15,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 15\n\n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\n \nmodel.StaticStep(\n    name=STEP_NAME,\n    previous=PREVIOUS_STEP,\n    initialInc=INITIAL_INC,\n    maxInc=MAX_INC,\n    minInc=MIN_INC,\n    maxNumInc=MAX_NUM_INC,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created static general step '{}' after '{}'. Wrote updated model to '{}.inp'\".format\n(\n    STEP_NAME, PREVIOUS_STEP, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nNone.\n9. Nonlinear Static Step with Increment Control\nCategory: Steps\nDescription\nOpens an existing model and creates a static step with geometric nonlinearity enabled (nlgeom=ON) -- required\nwhen large displacements/rotations or nonlinear buckling behavior are expected to matter.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. PREVIOUS_STEP must already exist.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Name for the new step\n\nPREVIOUS_STEP (str): Name of the step this one follows\n\nINITIAL_INC (float): Initial increment size (typically smaller than a linear step)\n\nMAX_INC (float): Maximum increment size\n\nMIN_INC (float): Minimum increment size (typically smaller than a linear step)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 14,
+      "page_label": "15"
+    }
+  },
+  {
+    "chunk_id": 16,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 16\n\n\nMAX_NUM_INC (int): Maximum number of increments allowed (typically higher than a linear step)\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), model.StaticStep() with nlgeom=ON, job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1-NL\"\nPREVIOUS_STEP = \"Initial\"\nINITIAL_INC = 0.01\nMAX_INC = 0.1\nMIN_INC = 1e-06\nMAX_NUM_INC = 200\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\n \nmodel.StaticStep(\n    name=STEP_NAME,\n    previous=PREVIOUS_STEP,\n    nlgeom=C.ON,\n    initialInc=INITIAL_INC,\n    maxInc=MAX_INC,\n    minInc=MIN_INC,\n    maxNumInc=MAX_NUM_INC,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 15,
+      "page_label": "16"
+    }
+  },
+  {
+    "chunk_id": 17,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 17\n\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created nonlinear (nlgeom=ON) static step '{}' after '{}'. Wrote updated model to '{\n}.inp'\".format(\n    STEP_NAME, PREVIOUS_STEP, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nSmaller initial/minimum increments and a higher maxNumInc are typically needed for nonlinear convergence\ncompared to an equivalent linear step -- the defaults shown are conservative starting points, not universally\ncorrect for every model.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 16,
+      "page_label": "17"
+    }
+  },
+  {
+    "chunk_id": 18,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 18\n\n10. Encastre Boundary Condition\nCategory: Boundary Conditions\nDescription\nOpens an existing model and fully fixes (all 6 degrees of freedom) a named region -- the standard \"fixed support\"\nboundary condition.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set at the\nassembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Step this BC is created in (often \"Initial\" for a support fixed throughout)\n\nSET_NAME (str): The exact, pre-existing assembly-level set name for the fixed region\n\nBC_NAME (str): Name for the new boundary condition\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.EncastreBC(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Initial\"\nSET_NAME = \"Fixed-Support\"\nBC_NAME = \"Encastre-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 17,
+      "page_label": "18"
+    }
+  },
+  {
+    "chunk_id": 19,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 19\n\nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \n# This script assumes SET_NAME already exists as a defined set at the\n# assembly level. It does not invent or guess this name -- confirm it\n# exists before running this script.\nif SET_NAME not in assembly.sets.keys():\n    raise ValueError(\"Set '{}' does not exist in the assembly.\".format(SET_NAME))\n \nregion = assembly.sets[SET_NAME]\nmodel.EncastreBC(name=BC_NAME, createStepName=STEP_NAME, region=region)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied encastre BC '{}' to set '{}' in step '{}'. Wrote updated model to '{}.inp'\".\nformat(\n    BC_NAME, SET_NAME, STEP_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nNone.\n11. Displacement / Rotation Boundary Condition\nCategory: Boundary Conditions\nDescription\nOpens an existing model and applies a prescribed displacement and/or rotation to a named region, leaving\nunspecified degrees of freedom unconstrained.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set at the\nassembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Step this BC is created in\n\nSET_NAME (str): The exact, pre-existing assembly-level set name\n\nBC_NAME (str): Name for the new boundary condition\n\nU1, U2, U3 (float or UNSET): Prescribed translations; UNSET leaves that DOF unconstrained\n\nUR1, UR2, UR3 (float or UNSET): Prescribed rotations; UNSET leaves that DOF unconstrained\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.DisplacementBC(), job.writeInput()",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 18,
+      "page_label": "19"
+    }
+  },
+  {
+    "chunk_id": 20,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 20\n\nScript\nfrom abaqus import mdb\nimport os\nfrom abaqusConstants import UNSET\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nSET_NAME = \"Loaded-Edge\"\nBC_NAME = \"Displacement-1\"\nU1 = 0.0\nU2 = -2.5  # mm, prescribed displacement\nU3 = UNSET\nUR1 = UNSET\nUR2 = UNSET\nUR3 = UNSET\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nif SET_NAME not in assembly.sets.keys():\n    raise ValueError(\"Set '{}' does not exist in the assembly.\".format(SET_NAME))\n \nregion = assembly.sets[SET_NAME]\nmodel.DisplacementBC(\n    name=BC_NAME,\n    createStepName=STEP_NAME,\n    region=region,\n    u1=U1, u2=U2, u3=U3,\n    ur1=UR1, ur2=UR2, ur3=UR3,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 19,
+      "page_label": "20"
+    }
+  },
+  {
+    "chunk_id": 21,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 21\n\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied displacement BC '{}' to set '{}' in step '{}'. Wrote updated model to '{}.in\np'\".format(\n    BC_NAME, SET_NAME, STEP_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nFor a shell/2D model, ur1/ur2/ur3 may not all be meaningful DOFs depending on element type -- confirm the\nmodel's element formulation before assuming all six DOFs apply.\n12. Symmetry Boundary Condition\nCategory: Boundary Conditions\nDescription\nOpens an existing model and applies a symmetry boundary condition (XSYMM, YSYMM, or ZSYMM) to a named\nregion -- used when modeling only a symmetric half/quarter of a physical part.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set at the\nassembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Step this BC is created in\n\nSET_NAME (str): The exact, pre-existing assembly-level set name for the symmetry plane\n\nBC_NAME (str): Name for the new boundary condition\n\nSYMMETRY_TYPE (str): One of \"XSYMM\", \"YSYMM\", \"ZSYMM\"\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.XsymmBC()/YsymmBC()/ZsymmBC(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Initial\"\nSET_NAME = \"Symmetry-Plane\"\nBC_NAME = \"YSYMM-1\"\nSYMMETRY_TYPE = \"YSYMM\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 20,
+      "page_label": "21"
+    }
+  },
+  {
+    "chunk_id": 22,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 22\n\n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nif SET_NAME not in assembly.sets.keys():\n    raise ValueError(\"Set '{}' does not exist in the assembly.\".format(SET_NAME))\n \nregion = assembly.sets[SET_NAME]\n \nif SYMMETRY_TYPE == \"XSYMM\":\n    model.XsymmBC(name=BC_NAME, createStepName=STEP_NAME, region=region)\nelif SYMMETRY_TYPE == \"YSYMM\":\n    model.YsymmBC(name=BC_NAME, createStepName=STEP_NAME, region=region)\nelif SYMMETRY_TYPE == \"ZSYMM\":\n    model.ZsymmBC(name=BC_NAME, createStepName=STEP_NAME, region=region)\nelse:\n    raise ValueError(\"SYMMETRY_TYPE must be one of XSYMM, YSYMM, ZSYMM\")\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied {} symmetry BC '{}' to set '{}'. Wrote updated model to '{}.inp'\".format(\n    SYMMETRY_TYPE, BC_NAME, SET_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nNone.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 21,
+      "page_label": "22"
+    }
+  },
+  {
+    "chunk_id": 23,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 23\n\n13. Concentrated Force on a Node Set\nCategory: Loads\nDescription\nOpens an existing model and applies a concentrated force load to a pre-defined node set within a specific\nanalysis step. Use this when a load acts at discrete node(s) rather than distributed over a surface.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set at the\nassembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): The analysis step this load applies in\n\nSET_NAME (str): The exact, pre-existing assembly-level node set name\n\nFORCE_COMPONENTS (tuple of 3 floats): (Cf1, Cf2, Cf3) force components in N\n\nLOAD_NAME (str): Name for the new load\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.ConcentratedForce(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nSET_NAME = \"Load-Region\"\nFORCE_COMPONENTS = (0.0, -500.0, 0.0)\nLOAD_NAME = \"AppliedForce-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 22,
+      "page_label": "23"
+    }
+  },
+  {
+    "chunk_id": 24,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 24\n\n\"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \n# This script assumes SET_NAME already exists as a defined set at the\n# assembly level. It does not invent or guess this name -- confirm it\n# exists before running this script.\nif SET_NAME not in assembly.sets.keys():\n    raise ValueError(\"Set '{}' does not exist in the assembly.\".format(SET_NAME))\n \nregion = assembly.sets[SET_NAME]\n \nmodel.ConcentratedForce(\n    name=LOAD_NAME,\n    createStepName=STEP_NAME,\n    region=region,\n    cf1=FORCE_COMPONENTS[0],\n    cf2=FORCE_COMPONENTS[1],\n    cf3=FORCE_COMPONENTS[2],\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied force '{}' to set '{}' in step '{}': ({}, {}, {}) N. Wrote updated model to \n'{}.inp'\".format(\n    LOAD_NAME, SET_NAME, STEP_NAME, FORCE_COMPONENTS[0], FORCE_COMPONENTS[1], FORCE_COMPONE\nNTS[2], OUTPUT_JOB_NAME\n))\nNotes / Caveats\nIf the set is defined at the PART level rather than the assembly level, reference it via the relevant instance instead\nof assembly.sets directly.\n14. Pressure Load on a Surface\nCategory: Loads\nDescription\nOpens an existing model and applies a uniform pressure load to a named surface.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SURFACE_NAME must already exist as a defined\nsurface at the assembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 23,
+      "page_label": "24"
+    }
+  },
+  {
+    "chunk_id": 25,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 25\n\n\nSTEP_NAME (str): The analysis step this load applies in\n\nSURFACE_NAME (str): The exact, pre-existing assembly-level surface name\n\nLOAD_NAME (str): Name for the new load\n\nMAGNITUDE (float): Pressure magnitude, in consistent units (e.g. MPa)\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.surfaces, model.Pressure(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nSURFACE_NAME = \"Top-Surface\"\nLOAD_NAME = \"Pressure-1\"\nMAGNITUDE = 2.5  # MPa\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nif SURFACE_NAME not in assembly.surfaces.keys():\n    raise ValueError(\"Surface '{}' does not exist in the assembly.\".format(SURFACE_NAME))\n \nregion = assembly.surfaces[SURFACE_NAME]\nmodel.Pressure(name=LOAD_NAME, createStepName=STEP_NAME, region=region, magnitude=MAGNITUDE\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 24,
+      "page_label": "25"
+    }
+  },
+  {
+    "chunk_id": 26,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 26\n\nprint(\"Applied pressure load '{}' of magnitude {} to surface '{}'. Wrote updated model to '\n{}.inp'\".format(\n    LOAD_NAME, MAGNITUDE, SURFACE_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nA positive magnitude acts INTO the surface (compressive convention) -- confirm sign convention matches the\nintended physical direction before finalizing.\n15. Distributed Line Load on Beam Elements\nCategory: Loads\nDescription\nOpens an existing model and applies a distributed force per unit length to a set of beam elements/edges.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. SET_NAME must already exist as a defined set\nreferencing beam elements or edges at the assembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): The analysis step this load applies in\n\nSET_NAME (str): The exact, pre-existing set name for the target beam region\n\nLOAD_NAME (str): Name for the new load\n\nMAGNITUDE (float): Load magnitude per unit length (e.g. N/mm)\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.LineLoad(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nSET_NAME = \"Beam-Elements\"\nLOAD_NAME = \"LineLoad-1\"\nMAGNITUDE = 10.0  # N/mm\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 25,
+      "page_label": "26"
+    }
+  },
+  {
+    "chunk_id": 27,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 27\n\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nif SET_NAME not in assembly.sets.keys():\n    raise ValueError(\"Set '{}' does not exist in the assembly.\".format(SET_NAME))\n \nregion = assembly.sets[SET_NAME]\nmodel.LineLoad(name=LOAD_NAME, createStepName=STEP_NAME, region=region, comp2=-MAGNITUDE)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied distributed line load '{}' of magnitude {} to '{}'. Wrote updated model to '\n{}.inp'\".format(\n    LOAD_NAME, MAGNITUDE, SET_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\ncomp2 here applies the load along the global/local Y-axis as an example -- adjust comp1/comp2/comp3 to match\nthe actual intended load direction for the specific task.\n16. Gravity / Body Force Load\nCategory: Loads\nDescription\nOpens an existing model and applies a gravity (body force) load across the entire model in a specified direction.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. Gravity applies globally, not to a named region, so no\nset/surface check is needed here.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): The analysis step this load applies in\n\nLOAD_NAME (str): Name for the new load",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 26,
+      "page_label": "27"
+    }
+  },
+  {
+    "chunk_id": 28,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 28\n\n\nGRAVITY_MAGNITUDE (float): Gravitational acceleration magnitude, in consistent units\n\nDIRECTION (tuple of 3 floats): Unit direction vector, e.g. (0, -1, 0) for -Y\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), model.Gravity(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Step-1\"\nLOAD_NAME = \"Gravity-1\"\nGRAVITY_MAGNITUDE = 9810.0  # mm/s^2 -- consistent unit system: mm, tonne, N, MPa, s\nDIRECTION = (0.0, -1.0, 0.0)\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\n \nmodel.Gravity(\n    name=LOAD_NAME,\n    createStepName=STEP_NAME,\n    comp1=DIRECTION[0] * GRAVITY_MAGNITUDE,\n    comp2=DIRECTION[1] * GRAVITY_MAGNITUDE,\n    comp3=DIRECTION[2] * GRAVITY_MAGNITUDE,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Applied gravity load '{}' of magnitude {} in direction {}. Wrote updated model to '{\n}.inp'\".format(",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 27,
+      "page_label": "28"
+    }
+  },
+  {
+    "chunk_id": 29,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 29\n\nLOAD_NAME, GRAVITY_MAGNITUDE, DIRECTION, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nUnits matter critically here -- 9810 mm/s^2 is only correct if the rest of the model consistently uses\nmm/tonne/N/MPa/s. Confirm the model's unit system before using this value directly.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 28,
+      "page_label": "29"
+    }
+  },
+  {
+    "chunk_id": 30,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 30\n\n17. Tie Constraint Between Two Surfaces\nCategory: Interactions & Connections\nDescription\nOpens an existing model and creates a tie constraint bonding a slave surface to a master surface, fully coupling\ntheir displacement.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. Both MASTER_SURFACE_NAME and\nSLAVE_SURFACE_NAME must already exist as defined surfaces at the assembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nMASTER_SURFACE_NAME (str): The exact, pre-existing master surface name\n\nSLAVE_SURFACE_NAME (str): The exact, pre-existing slave surface name\n\nTIE_NAME (str): Name for the new tie constraint\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.surfaces, model.Tie(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nMASTER_SURFACE_NAME = \"Master-Surf\"\nSLAVE_SURFACE_NAME = \"Slave-Surf\"\nTIE_NAME = \"Tie-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 29,
+      "page_label": "30"
+    }
+  },
+  {
+    "chunk_id": 31,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 31\n\nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nfor surf_name in (MASTER_SURFACE_NAME, SLAVE_SURFACE_NAME):\n    if surf_name not in assembly.surfaces.keys():\n        raise ValueError(\"Surface '{}' does not exist in the assembly.\".format(surf_name))\n \nmaster = assembly.surfaces[MASTER_SURFACE_NAME]\nslave = assembly.surfaces[SLAVE_SURFACE_NAME]\n \nmodel.Tie(name=TIE_NAME, master=master, slave=slave, adjust=True)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created tie constraint '{}' between '{}' (master) and '{}' (slave). Wrote updated mo\ndel to '{}.inp'\".format(\n    TIE_NAME, MASTER_SURFACE_NAME, SLAVE_SURFACE_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nadjust=True allows Abaqus to slightly adjust the slave surface nodes onto the master surface -- set this to False if\nthe surfaces are already exactly coincident.\n18. Surface-to-Surface Contact with Friction\nCategory: Interactions & Connections\nDescription\nOpens an existing model, defines a frictional surface-to-surface contact interaction property, creates the contact\ninteraction between two named surfaces, and persists the result.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. Both surfaces must already exist as defined surfaces at\nthe assembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nSTEP_NAME (str): Step the interaction is created in (often \"Initial\")\n\nMASTER_SURFACE_NAME (str): The exact, pre-existing master surface name\n\nSLAVE_SURFACE_NAME (str): The exact, pre-existing slave surface name\n\nFRICTION_COEFF (float): Coefficient of friction\n\nINTERACTION_NAME (str): Name for the new interaction\n\nPROPERTY_NAME (str): Name for the new contact property\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 30,
+      "page_label": "31"
+    }
+  },
+  {
+    "chunk_id": 32,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 32\n\nmdb.ModelFromInputFile(), model.ContactProperty(), property.TangentialBehavior(), property.NormalBehavior(),\nmodel.SurfaceToSurfaceContactStd(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\nimport abaqusConstants as C\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nSTEP_NAME = \"Initial\"\nMASTER_SURFACE_NAME = \"Contact-Master\"\nSLAVE_SURFACE_NAME = \"Contact-Slave\"\nFRICTION_COEFF = 0.2\nINTERACTION_NAME = \"Contact-1\"\nPROPERTY_NAME = \"ContactProp-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nfor surf_name in (MASTER_SURFACE_NAME, SLAVE_SURFACE_NAME):\n    if surf_name not in assembly.surfaces.keys():\n        raise ValueError(\"Surface '{}' does not exist in the assembly.\".format(surf_name))\n \ninteraction_property = model.ContactProperty(PROPERTY_NAME)\ninteraction_property.TangentialBehavior(formulation=C.PENALTY, table=((FRICTION_COEFF,),))\ninteraction_property.NormalBehavior(pressureOverclosure=C.HARD, allowSeparation=C.ON)\n \nmaster = assembly.surfaces[MASTER_SURFACE_NAME]\nslave = assembly.surfaces[SLAVE_SURFACE_NAME]\n \nmodel.SurfaceToSurfaceContactStd(\n    name=INTERACTION_NAME,",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 31,
+      "page_label": "32"
+    }
+  },
+  {
+    "chunk_id": 33,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 33\n\ncreateStepName=STEP_NAME,\n    master=master,\n    slave=slave,\n    sliding=C.FINITE,\n    interactionProperty=PROPERTY_NAME,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created surface-to-surface contact '{}' with friction coefficient {}. Wrote updated \nmodel to '{}.inp'\".format(\n    INTERACTION_NAME, FRICTION_COEFF, OUTPUT_JOB_NAME\n))\nNotes / Caveats\nsliding=FINITE allows large relative sliding between surfaces -- use SMALL instead if the surfaces are expected\nto stay in nearly the same relative position throughout the analysis, which converges more easily.\n19. Kinematic Coupling Constraint\nCategory: Interactions & Connections\nDescription\nOpens an existing model and rigidly couples a surface/region's motion to a single reference point, constraining all\nspecified degrees of freedom identically -- commonly used to apply a load/BC through a single control point\nrepresenting a rigid connector or bolt.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file. Both REFERENCE_POINT_SET_NAME and\nCOUPLED_SET_NAME must already exist as defined sets at the assembly level.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to open\n\nWORKING_DIRECTORY (str): The task's working directory -- all output must land here, and nowhere else\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\n\nREFERENCE_POINT_SET_NAME (str): The exact, pre-existing set name for the reference point\n\nCOUPLED_SET_NAME (str): The exact, pre-existing set name for the coupled region\n\nCOUPLING_NAME (str): Name for the new coupling constraint\n\nOUTPUT_JOB_NAME (str): Name used to write the updated model as OUTPUT_JOB_NAME.inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, model.Coupling(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\nfrom abaqusConstants import KINEMATIC, ON\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 32,
+      "page_label": "33"
+    }
+  },
+  {
+    "chunk_id": 34,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 34\n\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nMODEL_NAME = \"ImportedModel\"\nREFERENCE_POINT_SET_NAME = \"RP-Set\"\nCOUPLED_SET_NAME = \"Coupled-Region\"\nCOUPLING_NAME = \"Coupling-1\"\nOUTPUT_JOB_NAME = \"UpdatedModel\"\n# ====================\n \n# All implicit-path Abaqus writes (job.writeInput()) use the process's\n# current working directory -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY before any such call so output lands where\n# it must, per the standing rule that every output goes inside\n# WORKING_DIRECTORY and nowhere else.\nos.chdir(WORKING_DIRECTORY)\n \n# Guard against silently overwriting the very file this script just opened.\nif OUTPUT_JOB_NAME + \".inp\" == os.path.basename(INP_FILE_PATH):\n    raise ValueError(\n        \"OUTPUT_JOB_NAME ('{}.inp') matches the input file's name -- choose a \"\n        \"distinct output name to avoid overwriting the original file.\".format(OUTPUT_JOB_NA\nME)\n    )\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nfor set_name in (REFERENCE_POINT_SET_NAME, COUPLED_SET_NAME):\n    if set_name not in assembly.sets.keys():\n        raise ValueError(\"Set '{}' does not exist in the assembly.\".format(set_name))\n \ncontrol_point = assembly.sets[REFERENCE_POINT_SET_NAME]\nsurface_region = assembly.sets[COUPLED_SET_NAME]\n \nmodel.Coupling(\n    name=COUPLING_NAME,\n    controlPoint=control_point,\n    surface=surface_region,\n    couplingType=KINEMATIC,\n    u1=ON, u2=ON, u3=ON,\n    ur1=ON, ur2=ON, ur3=ON,\n)\n \nexport_job = mdb.Job(name=OUTPUT_JOB_NAME, model=MODEL_NAME)\nexport_job.writeInput(consistencyChecking=False)\n \nprint(\"Created kinematic coupling '{}' between '{}' and '{}'. Wrote updated model to '{}.in\np'\".format(\n    COUPLING_NAME, REFERENCE_POINT_SET_NAME, COUPLED_SET_NAME, OUTPUT_JOB_NAME\n))\nNotes / Caveats",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 33,
+      "page_label": "34"
+    }
+  },
+  {
+    "chunk_id": 35,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 35\n\nREFERENCE_POINT_SET_NAME must reference an actual Reference Point feature, not an ordinary node --\nconfirm one exists (or create it) before using this pattern.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 34,
+      "page_label": "35"
+    }
+  },
+  {
+    "chunk_id": 36,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 36\n\n20. Submit a Job Directly from an Input File\nCategory: Job Submission\nDescription\nSubmits a complete, already-set-up .inp file directly as an analysis job, waits for completion, and checks the final\nstatus. This is simpler than reconstructing a Model object first -- job submission never needed one in the first\nplace, only a complete .inp.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a COMPLETE, fully set-up .inp file (materials, sections, steps, loads, BCs, and\nmesh all already in place).\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the complete .inp file to submit\n\nWORKING_DIRECTORY (str): The task's working directory -- all job output must land here\n\nJOB_NAME (str): Name for the new job\n\nNUM_CPUS (int): Number of CPUs/domains to use\nKey API Objects / Methods Used\nmdb.JobFromInputFile(), job.submit(), job.waitForCompletion(), job.status\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nWORKING_DIRECTORY = \"/path/to/working_directory\"\nJOB_NAME = \"Job-1\"\nNUM_CPUS = 1\n# ====================\n \n# job.submit() uses the process's current working directory for its output\n# files (.odb, .dat, .msg, .sta) -- there is no path argument for this call.\n# Change into WORKING_DIRECTORY first so every output lands where it must.\nos.chdir(WORKING_DIRECTORY)\n \njob = mdb.JobFromInputFile(\n    name=JOB_NAME,\n    inputFileName=INP_FILE_PATH,\n    numCpus=NUM_CPUS,\n    numDomains=NUM_CPUS,\n)\n \njob.submit(consistencyChecking=False)\njob.waitForCompletion()\n \nstatus = job.status\nprint(\"Job '{}' finished with status: {}\".format(JOB_NAME, status))\n \nif status != \"COMPLETED\":",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 35,
+      "page_label": "36"
+    }
+  },
+  {
+    "chunk_id": 37,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 37\n\nraise RuntimeError(\"Job '{}' did not complete successfully -- status: {}\".format(JOB_NA\nME, status))\nNotes / Caveats\nwaitForCompletion() blocks until the job finishes -- for a long-running analysis, ensure the calling process's own\ntimeout is set accordingly. The resulting .odb will be named JOB_NAME.odb in the working directory.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 36,
+      "page_label": "37"
+    }
+  },
+  {
+    "chunk_id": 38,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 38\n\n21. Peak von Mises Stress Extraction\nCategory: Post-Processing\nDescription\nOpens a completed .odb and reports the peak von Mises stress value and the element it occurs at, for a specific\nstep and frame.\nPrerequisites / Assumptions\nODB_PATH must point to a completed, readable .odb file containing stress ('S') field output for STEP_NAME.\nInputs Required\n\nODB_PATH (str): Absolute path to the .odb file\n\nSTEP_NAME (str): The analysis step to extract from\n\nFRAME_INDEX (int): Frame index within the step; -1 for the last frame\nKey API Objects / Methods Used\nodbAccess.openOdb(), field.getScalarField(invariant=MISES)\nScript\nfrom odbAccess import openOdb\nfrom abaqusConstants import MISES\n \n# === USER INPUTS ===\nODB_PATH = \"/path/to/results.odb\"\nSTEP_NAME = \"Step-1\"\nFRAME_INDEX = -1\n# ====================\n \nodb = openOdb(path=ODB_PATH, readOnly=True)\n \ntry:\n    step = odb.steps[STEP_NAME]\n    frame = step.frames[FRAME_INDEX]\n \n    stress_field = frame.fieldOutputs[\"S\"]\n    mises_field = stress_field.getScalarField(invariant=MISES)\n \n    peak_stress = 0.0\n    peak_location = None\n    for value in mises_field.values:\n        if value.data > peak_stress:\n            peak_stress = value.data\n            peak_location = value.elementLabel\n \n    print(\"Peak von Mises stress in step '{}': {} at element {}\".format(\n        STEP_NAME, peak_stress, peak_location\n    ))\nfinally:\n    odb.close()\nNotes / Caveats",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 37,
+      "page_label": "38"
+    }
+  },
+  {
+    "chunk_id": 39,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 39\n\nAlways close the odb in a finally block -- an odb left open can lock the file for other processes (including a later\nre-run of the same analysis).\n22. Reaction Force Extraction at a Node Set\nCategory: Post-Processing\nDescription\nOpens a completed .odb and extracts/sums the reaction force components at a specific named node set for a\ngiven step and frame.\nPrerequisites / Assumptions\nODB_PATH must point to a completed .odb. SET_NAME must already exist as a node set in the odb's assembly\n(it will if it was defined in the .inp before the job ran).\nInputs Required\n\nODB_PATH (str): Absolute path to the .odb file\n\nSTEP_NAME (str): The analysis step to extract from\n\nSET_NAME (str): The exact, pre-existing node set name\n\nFRAME_INDEX (int): Frame index within the step; -1 for the last frame\nKey API Objects / Methods Used\nodbAccess.openOdb(), odb.rootAssembly.nodeSets, field.getSubset()\nScript\nfrom odbAccess import openOdb\n \n# === USER INPUTS ===\nODB_PATH = \"/path/to/results.odb\"\nSTEP_NAME = \"Step-1\"\nSET_NAME = \"Fixed-Support\"\nFRAME_INDEX = -1\n# ====================\n \nodb = openOdb(path=ODB_PATH, readOnly=True)\n \ntry:\n    assembly = odb.rootAssembly\n \n    if SET_NAME not in assembly.nodeSets.keys():\n        raise ValueError(\"Node set '{}' does not exist in the odb assembly.\".format(SET_NAM\nE))\n \n    node_set = assembly.nodeSets[SET_NAME]\n \n    step = odb.steps[STEP_NAME]\n    frame = step.frames[FRAME_INDEX]\n \n    rf_field = frame.fieldOutputs[\"RF\"]\n    rf_subset = rf_field.getSubset(region=node_set)\n \n    total_rf = [0.0, 0.0, 0.0]",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 38,
+      "page_label": "39"
+    }
+  },
+  {
+    "chunk_id": 40,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 40\n\nfor value in rf_subset.values:\n        for i in range(3):\n            total_rf[i] += value.data[i]\n \n    print(\"Total reaction force at set '{}' in step '{}': ({}, {}, {}) N\".format(\n        SET_NAME, STEP_NAME, total_rf[0], total_rf[1], total_rf[2]\n    ))\nfinally:\n    odb.close()\nNotes / Caveats\nIf SET_NAME was defined at the PART level rather than the assembly level in the original .inp, check\nodb.rootAssembly.instances[].nodeSets instead.\n23. Nodal Displacement Time-History\nCategory: Post-Processing\nDescription\nOpens a completed .odb and extracts the displacement of a monitored node across every frame of a step,\nproducing a time-history.\nPrerequisites / Assumptions\nODB_PATH must point to a completed .odb. SET_NAME must already exist as a node set containing exactly the\nnode(s) to monitor.\nInputs Required\n\nODB_PATH (str): Absolute path to the .odb file\n\nSTEP_NAME (str): The analysis step to extract from\n\nSET_NAME (str): The exact, pre-existing node set name for the monitored node\nKey API Objects / Methods Used\nodbAccess.openOdb(), odb.rootAssembly.nodeSets, step.frames, field.getSubset()\nScript\nfrom odbAccess import openOdb\n \n# === USER INPUTS ===\nODB_PATH = \"/path/to/results.odb\"\nSTEP_NAME = \"Step-1\"\nSET_NAME = \"Monitor-Node\"\n# ====================\n \nodb = openOdb(path=ODB_PATH, readOnly=True)\n \ntry:\n    assembly = odb.rootAssembly\n \n    if SET_NAME not in assembly.nodeSets.keys():\n        raise ValueError(\"Node set '{}' does not exist in the odb assembly.\".format(SET_NAM\nE))",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 39,
+      "page_label": "40"
+    }
+  },
+  {
+    "chunk_id": 41,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 41\n\nnode_set = assembly.nodeSets[SET_NAME]\n    step = odb.steps[STEP_NAME]\n \n    time_history = []\n    for frame in step.frames:\n        disp_field = frame.fieldOutputs[\"U\"]\n        disp_subset = disp_field.getSubset(region=node_set)\n        if disp_subset.values:\n            value = disp_subset.values[0]\n            time_history.append((frame.frameValue, value.data))\n \n    print(\"Displacement time-history for set '{}':\".format(SET_NAME))\n    for time_val, displacement in time_history:\n        print(\"  t={}: U=({}, {}, {})\".format(time_val, displacement[0], displacement[1], d\nisplacement[2]))\nfinally:\n    odb.close()\nNotes / Caveats\nIf SET_NAME contains more than one node, only the first value in the subset is reported here -- extend the loop\nover disp_subset.values if multiple nodes need to be tracked simultaneously.\n24. Write Extracted Stress Results to CSV\nCategory: Post-Processing\nDescription\nOpens a completed .odb, extracts von Mises stress values for every integration point in a frame, and writes them\nto a CSV file -- useful when the user wants a downloadable results table rather than an in-chat summary.\nPrerequisites / Assumptions\nODB_PATH must point to a valid, completed .odb file. OUTPUT_CSV_PATH's parent directory must exist and be\nwritable -- this should be the task's WORKING_DIRECTORY.\nInputs Required\n\nODB_PATH (str): Absolute path to the .odb file\n\nSTEP_NAME (str): The analysis step to extract from\n\nFRAME_INDEX (int): Frame index within the step; -1 for the last frame\n\nOUTPUT_CSV_PATH (str): Absolute path for the output CSV file -- must be inside WORKING_DIRECTORY\nKey API Objects / Methods Used\nodbAccess.openOdb(), field.getScalarField(), csv.writer()\nScript\nimport csv\nfrom odbAccess import openOdb\nfrom abaqusConstants import MISES\n \n# === USER INPUTS ===\nODB_PATH = \"/path/to/results.odb\"\nSTEP_NAME = \"Step-1\"\nFRAME_INDEX = -1",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 40,
+      "page_label": "41"
+    }
+  },
+  {
+    "chunk_id": 42,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 42\n\nOUTPUT_CSV_PATH = \"/path/to/working_directory/stress_results.csv\"  # must be inside WORKING\n_DIRECTORY\n# ====================\n \nodb = openOdb(path=ODB_PATH, readOnly=True)\n \ntry:\n    step = odb.steps[STEP_NAME]\n    frame = step.frames[FRAME_INDEX]\n \n    stress_field = frame.fieldOutputs[\"S\"]\n    mises_field = stress_field.getScalarField(invariant=MISES)\n \n    with open(OUTPUT_CSV_PATH, \"w\") as csv_file:\n        writer = csv.writer(csv_file)\n        writer.writerow([\"ElementLabel\", \"IntegrationPoint\", \"MisesStress\"])\n        for value in mises_field.values:\n            writer.writerow([value.elementLabel, value.integrationPoint, value.data])\n \n    print(\"Wrote von Mises stress results to '{}'\".format(OUTPUT_CSV_PATH))\nfinally:\n    odb.close()\nNotes / Caveats\nOUTPUT_CSV_PATH must be built by joining WORKING_DIRECTORY with a filename -- never a hardcoded or\nrelative path elsewhere.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 41,
+      "page_label": "42"
+    }
+  },
+  {
+    "chunk_id": 43,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 43\n\n25. List All Defined Sets and Surfaces in an Existing Model\nCategory: File Utility\nDescription\nOpens an existing .inp file and prints every set and surface currently defined at the assembly level, and every set\ndefined at the part level for each part -- a direct way to confirm whether a specific named region actually exists in\nthe model before targeting it in another script.\nPrerequisites / Assumptions\nINP_FILE_PATH must point to a valid, existing .inp file.\nInputs Required\n\nINP_FILE_PATH (str): Absolute path to the existing .inp file to inspect\n\nMODEL_NAME (str): Name to assign the model reconstructed from the .inp\nKey API Objects / Methods Used\nmdb.ModelFromInputFile(), assembly.sets, assembly.surfaces, model.parts, part.sets\nScript\nfrom abaqus import mdb\n \n# === USER INPUTS ===\nINP_FILE_PATH = \"/path/to/working_directory/current_model.inp\"\nMODEL_NAME = \"InspectedModel\"\n# ====================\n \nmdb.ModelFromInputFile(name=MODEL_NAME, inputFileName=INP_FILE_PATH)\nmodel = mdb.models[MODEL_NAME]\nassembly = model.rootAssembly\n \nprint(\"=== Assembly-level Sets ===\")\nfor set_name in assembly.sets.keys():\n    print(\"  - {}\".format(set_name))\n \nprint(\"=== Assembly-level Surfaces ===\")\nfor surf_name in assembly.surfaces.keys():\n    print(\"  - {}\".format(surf_name))\n \nprint(\"=== Part-level Sets (by part) ===\")\nfor part_name, part in model.parts.items():\n    print(\"  Part: {}\".format(part_name))\n    for set_name in part.sets.keys():\n        print(\"    - {}\".format(set_name))\nNotes / Caveats\nRun this FIRST whenever a task references a specific set/surface by description rather than by an exact,\nalready-confirmed name -- this is the direct, practical way to check before targeting a region with any other script\nin this document.\n26. Write an Updated Input File (.inp) from the Current In-Memory Model\nCategory: File Utility",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 42,
+      "page_label": "43"
+    }
+  },
+  {
+    "chunk_id": 44,
+    "page_content": "Source: abaqus_2024_scripting_reference.pdf\nPage: 44\n\nDescription\nWrites out the current state of an IN-MEMORY model (already open in this same script's session -- e.g. right after\na geometry-import-and-mesh sequence) as a fresh .inp file. Use this as the final step of a combined script that\nperforms several operations together, rather than as a standalone script on its own.\nPrerequisites / Assumptions\nMODEL_NAME must already exist and be fully set up as intended, IN THIS SAME SCRIPT'S session -- this\nscript does not open anything from a file itself.\nInputs Required\n\nMODEL_NAME (str): Name of the model database entry to export (already in memory)\n\nJOB_NAME (str): Name used for the job object created solely to generate the .inp\n\nOUTPUT_DIRECTORY (str): Directory the .inp should end up in -- must be WORKING_DIRECTORY\nKey API Objects / Methods Used\nmdb.Job(), job.writeInput()\nScript\nfrom abaqus import mdb\nimport os\n \n# === USER INPUTS ===\nMODEL_NAME = \"Model-1\"\nJOB_NAME = \"ModelExport-1\"\nOUTPUT_DIRECTORY = \"/path/to/working_directory\"\n# ====================\n \n# writeInput() uses the process's current working directory -- there is no\n# path argument for this call. Change into OUTPUT_DIRECTORY first so the\n# .inp actually lands where it must, rather than wherever the process\n# happened to start.\nos.chdir(OUTPUT_DIRECTORY)\n \njob = mdb.Job(name=JOB_NAME, model=MODEL_NAME)\njob.writeInput(consistencyChecking=False)\n \nexpected_path = os.path.join(OUTPUT_DIRECTORY, JOB_NAME + \".inp\")\nprint(\"Wrote updated input file to '{}'\".format(expected_path))\nNotes / Caveats\nEvery one of the modification scripts elsewhere in this document (materials, steps, BCs, loads, interactions)\nalready includes this exact chdir-and-write-out pattern internally at its own end -- use THIS standalone version\nonly when combining several building-block operations into ONE script and exporting once at the true end, not\nafter every individual operation.",
+    "metadata": {
+      "producer": "ReportLab PDF Library - (opensource)",
+      "creator": "(unspecified)",
+      "creationdate": "2026-08-26T04:48:21+00:00",
+      "author": "(anonymous)",
+      "keywords": "",
+      "moddate": "2026-08-26T04:48:21+00:00",
+      "subject": "(unspecified)",
+      "title": "Abaqus 2024 Scripting Reference",
+      "trapped": "/False",
+      "source": "abaqus_2024_scripting_reference.pdf",
+      "total_pages": 44,
+      "page": 43,
+      "page_label": "44"
+    }
+  }
+]
