@@ -2,8 +2,6 @@
   <img src="src/frontend/assets/fea_copilot_logo_gold.png" alt="FEA Copilot" width="320">
 </p>
 
-<h1 align="center">FEA Copilot</h1>
-
 <p align="center">
   A multi-agent AI assistant for Abaqus CAE. It reads your simulation files, answers FEA questions,<br>
   and writes, runs and debugs Abaqus Python scripts for you.
